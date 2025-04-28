@@ -12,6 +12,9 @@ from scipy.stats import boxcox
 from scipy.special import inv_boxcox
 from statsmodels.tsa.statespace.sarimax import SARIMAX 
 import matplotlib.dates as mdates
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from sklearn.metrics import mean_absolute_percentage_error, mean_absolute_error, mean_squared_error, root_mean_squared_error
+
 
 def ADF_test(df):
     p = adfuller(df)[1]
@@ -116,11 +119,6 @@ def Model(train, test, order, exog_train=None, exog_test=None):
         plt.title(f'{model_type} Forecast vs Actual')
         plt.grid(True)
         plt.show()
-
-        # Printing actual vs predicted
-        pred = pred.rename('Forecast')
-        for i in range(len(pred)):
-            print(f'Actual: {test[i]:.2f}, Predicted: {pred[i]:.2f}')
 
     pred = pred.rename('Forecast')
     return model, pred
@@ -247,3 +245,38 @@ def Eval_possible_models(y_train, y_test, p_list, d_list, q_list, exog_train=Non
 
     return all_models, top_mape, top_aic, top_bic 
 
+def Confidence_intervals(model, steps, exog=None):
+    if exog is not None:
+        confidence = model.get_forecast(steps=steps, exog=exog).conf_int()
+    else:
+        confidence = model.get_forecast(steps=steps).conf_int()
+      
+    return confidence
+
+def HoltWintersModel(train, test, seasonal_periods = 12, trend='add', seasonal='add'):
+    model = ExponentialSmoothing(train, trend=trend, seasonal=seasonal, seasonal_periods=seasonal_periods)
+    model_fit = model.fit()
+    forecast = model_fit.forecast(len(test))
+    return forecast
+
+def Evaulate_HW(test, pred):
+    mape = mean_absolute_percentage_error(test, pred)
+    mae = mean_absolute_error(test, pred)
+    mse = mean_squared_error(test, pred)
+    rmse = root_mean_squared_error(test, pred)
+    
+    print(f'MAPE: {mape:.2f}%')
+    print(f'MAE: {mae:.4f}')
+    print(f'MSE: {mse:.4f}')
+    print(f'RMSE: {rmse:.4f}')
+
+def HoltWintersForecast(df,months, seasonal_periods = 12, trend='add', seasonal='add'):
+    model = ExponentialSmoothing(df, trend=trend, seasonal=seasonal, seasonal_periods=seasonal_periods)
+    model_fit = model.fit()
+    forecast = model_fit.forecast(months)
+    return forecast
+
+def HWForecast_plot(actual, forecast):
+    forecast.plot(label='Forecast', color='red')
+    actual.plot(label='Actual', color='blue')
+    plt.legend()
