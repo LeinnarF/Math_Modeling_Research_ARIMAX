@@ -260,7 +260,7 @@ def HoltWintersModel(train, test, seasonal_periods = 12, trend='add', seasonal='
     return forecast
 
 def Evaulate_HW(test, pred):
-    mape = mean_absolute_percentage_error(test, pred)
+    mape = mean_absolute_percentage_error(test, pred) * 100
     mae = mean_absolute_error(test, pred)
     mse = mean_squared_error(test, pred)
     rmse = root_mean_squared_error(test, pred)
