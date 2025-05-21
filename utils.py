@@ -18,7 +18,7 @@ from sklearn.metrics import mean_absolute_percentage_error, mean_absolute_error,
 
 def ADF_test(df):
     p = adfuller(df)[1]
-    print(f'P-value: {p} < 0.05')
+    print(f'P-value: {p:.4f} < 0.05')
     if p < 0.05:
         print('The time series is stationary')
     else:
@@ -96,6 +96,10 @@ def Model(train, test, order, exog_train=None, exog_test=None):
         model = SARIMAX(train, exog=exog_train, order=order).fit()
         pred = model.predict(start=len(train), end=len(train) + len(test) - 1, exog=exog_test, typ='levels')
         model_type = 'ARIMAX'
+        
+        confidence = model.get_forecast(steps=len(test), exog=exog_test).conf_int()
+        conf_int = confidence.values
+
 
         # Plotting for ARIMAX
         plt.figure(figsize=(12, 6))
@@ -104,6 +108,7 @@ def Model(train, test, order, exog_train=None, exog_test=None):
         plt.plot(test.index, pred, label='Forecasted Test Data', color='red', linestyle='--')
         plt.axvline(x=train.index[-1], color='black', linestyle=':', label='Train-Test Split')
         plt.title(f'{model_type} Forecast vs Actual')
+        plt.fill_between(pred.index, conf_int[:, 0], conf_int[:, 1], color='pink', alpha=0.3, label='95% Confidence Interval')
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -176,7 +181,8 @@ def Forecasted_plot(actual, forecasted, conf_int=None):
         plt.grid(True, which='major', axis='x', linestyle='-', alpha=0.7)
         plt.xticks(rotation=45)
 
-    plt.title('Forecast vs Actual' + (' with Confidence Intervals' if conf_int is not None else ''))
+    plt.title('Forecasted Price vs Actual Price')
+    plt.ylabel('Price')
     plt.legend()
     plt.show()
 
